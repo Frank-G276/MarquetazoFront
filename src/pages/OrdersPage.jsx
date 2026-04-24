@@ -25,7 +25,6 @@ export function OrdersPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <h1 className="text-3xl font-bold">Mis pedidos</h1>
-      <p className="mt-2 text-sm text-ink/70">Historial desde <code>GET /api/orders</code>.</p>
       {loading ? <p className="mt-6 text-sm text-ink/60">Cargando...</p> : null}
       {error ? <p className="mt-6 text-sm text-red-700">{error}</p> : null}
       {!loading && !error ? (
