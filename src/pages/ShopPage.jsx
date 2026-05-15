@@ -3,13 +3,15 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { ProductCard } from '../components/ProductCard.jsx'
 import { useProducts } from '../context/ProductsContext.jsx'
 
+
+
 const normalize = (s) => s.trim().toLowerCase()
 
 export function ShopPage() {
   const [params] = useSearchParams()
   const cat = params.get('cat') || ''
   const q = params.get('q') || ''
-  const { products, loading, error, categories } = useProducts()
+  const { products, loading, error, categories, reloadProducts } = useProducts()
 
   const filtered = useMemo(() => {
     let list = products
@@ -53,7 +55,14 @@ export function ShopPage() {
 
         <div className="flex-1">
           {loading ? <p className="text-sm text-ink/60">Cargando productos...</p> : null}
-          {error ? <p className="text-sm text-red-700">{error.message}</p> : null}
+          {error ? (
+            <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+              <p>{error.message || 'No se pudo cargar los productos.'}</p>
+              <button onClick={reloadProducts} className="mt-2 font-semibold underline">
+                Reintentar
+              </button>
+            </div>
+          ) : null}
           {!loading && !error ? (
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {filtered.map((p) => (

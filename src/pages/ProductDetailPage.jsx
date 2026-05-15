@@ -4,7 +4,7 @@ import * as productsApi from '../api/products.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useCart } from '../context/CartContext.jsx'
 import { finalUnitPrice, formatCLP } from '../utils/money.js'
-import { getProductPrimaryImage } from '../utils/productImage.js'
+import { getAllProductImages } from '../utils/productImage.js'
 
 export function ProductDetailPage() {
   const { id } = useParams()
@@ -16,6 +16,7 @@ export function ProductDetailPage() {
   const [error, setError] = useState(null)
   const [quantity, setQuantity] = useState(1)
   const [message, setMessage] = useState('')
+  const [selectedImg, setSelectedImg] = useState(0)
 
   useEffect(() => {
     let mounted = true
@@ -38,7 +39,7 @@ export function ProductDetailPage() {
   if (loading) return <div className="mx-auto max-w-6xl px-4 py-12 text-sm text-ink/60">Cargando producto...</div>
   if (!product || error) return <div className="mx-auto max-w-6xl px-4 py-12 text-sm text-red-700">Producto no encontrado.</div>
 
-  const image = getProductPrimaryImage(product)
+  const images = getAllProductImages(product)
   const finalPrice = finalUnitPrice(product)
   const maxQty = Math.max(1, Math.min(Number(product.stock || 1), 99))
 
@@ -62,8 +63,40 @@ export function ProductDetailPage() {
         <Link to="/" className="no-underline">Inicio</Link> / <Link to="/tienda" className="no-underline">Tienda</Link> / {product.name}
       </nav>
       <div className="mt-6 grid gap-8 lg:grid-cols-2">
-        <div className="overflow-hidden rounded-3xl border border-line bg-white">
-          {image ? <img src={image} alt="" className="aspect-square w-full object-cover" /> : <div className="aspect-square" />}
+        <div className="flex flex-col gap-3">
+          {/* Imagen principal */}
+          <div className="flex min-h-72 items-center justify-center overflow-hidden rounded-3xl border border-line bg-white p-4">
+            {images.length > 0
+              ? <img
+                  key={selectedImg}
+                  src={images[selectedImg]}
+                  alt={product.name}
+                  className="max-h-96 w-full object-contain transition-opacity duration-200"
+                />
+              : <div className="flex h-72 w-full items-center justify-center text-6xl font-bold text-brand/20">
+                  {product.name?.[0] || '?'}
+                </div>}
+          </div>
+
+          {/* Thumbnails */}
+          {images.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {images.map((url, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setSelectedImg(i)}
+                  className={`shrink-0 overflow-hidden rounded-xl border-2 transition-all ${
+                    selectedImg === i
+                      ? 'border-brand shadow-md scale-105'
+                      : 'border-line opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img src={url} alt={`Vista ${i + 1}`} className="h-16 w-16 object-contain bg-white p-1" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div>
           <p className="text-sm font-medium uppercase tracking-wide text-brand">{product.category}</p>

@@ -1,203 +1,216 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import * as ordersApi from '../api/orders.js'
-import * as productsApi from '../api/products.js'
-import { useProducts } from '../context/ProductsContext.jsx'
-import { formatCLP } from '../utils/money.js'
+import { useCategories } from '../context/CategoriesContext.jsx'
 
-const EMPTY_FORM = {
-  name: '',
-  description: '',
-  price: '',
-  stock: '',
-  category: '',
-  subCategory: '',
-  discountPercent: '0',
-}
+const STATUSES = ['PENDIENTE', 'DESPACHADO', 'ENTREGADO', 'CANCELADO']
 
-function buildProductFormData(form, files, removeExistingImages = false) {
-  const fd = new FormData()
-  Object.entries(form).forEach(([k, v]) => {
-    if (v !== '' && v !== null && v !== undefined) fd.append(k, String(v))
-  })
-  if (removeExistingImages) fd.append('removeExistingImages', 'true')
-  if (files?.length) {
-    ;[...files].forEach((f) => fd.append('images', f))
-  }
-  return fd
+const statusColor = {
+  PENDIENTE: 'bg-yellow-100 text-yellow-700',
+  DESPACHADO: 'bg-blue-100 text-blue-700',
+  ENTREGADO: 'bg-green-100 text-green-700',
+  CANCELADO: 'bg-red-100 text-red-700',
 }
 
 export function AdminPage() {
-  const { products, reloadProducts } = useProducts()
-  const [createForm, setCreateForm] = useState(EMPTY_FORM)
-  const [createFiles, setCreateFiles] = useState([])
-  const [selectedId, setSelectedId] = useState('')
-  const [editForm, setEditForm] = useState(EMPTY_FORM)
-  const [editFiles, setEditFiles] = useState([])
-  const [replaceImages, setReplaceImages] = useState(false)
+  const { categories, create: createCategory, remove: removeCategory } = useCategories()
+  const [newCat, setNewCat] = useState('')
+  const [catMsg, setCatMsg] = useState(null)
+  const [catLoading, setCatLoading] = useState(false)
+
   const [orderId, setOrderId] = useState('')
   const [orderStatus, setOrderStatus] = useState('PENDIENTE')
-  const [msg, setMsg] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState(null)
 
-  const selectedProduct = useMemo(
-    () => products.find((p) => p._id === selectedId) || null,
-    [products, selectedId],
-  )
-
-  const updateCreate = (key) => (e) => setCreateForm((f) => ({ ...f, [key]: e.target.value }))
-  const updateEdit = (key) => (e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))
-
-  const selectProduct = (id) => {
-    setSelectedId(id)
-    const p = products.find((item) => item._id === id)
-    if (!p) return
-    setEditForm({
-      name: p.name || '',
-      description: p.description || '',
-      price: String(p.price ?? ''),
-      stock: String(p.stock ?? ''),
-      category: p.category || '',
-      subCategory: p.subCategory || '',
-      discountPercent: String(p.discountPercent ?? 0),
-    })
+  const notify = (type, text) => {
+    setMsg({ type, text })
+    setTimeout(() => setMsg(null), 4000)
   }
 
-  const createProduct = async (e) => {
+  const notifyCat = (type, text) => {
+    setCatMsg({ type, text })
+    setTimeout(() => setCatMsg(null), 4000)
+  }
+
+  const handleCreateCat = async (e) => {
     e.preventDefault()
-    setMsg('')
+    if (!newCat.trim()) return
+    setCatLoading(true)
     try {
-      if (!createFiles.length) throw new Error('Debes subir al menos una imagen')
-      const fd = buildProductFormData(createForm, createFiles)
-      await productsApi.createProduct(fd)
-      await reloadProducts()
-      setCreateForm(EMPTY_FORM)
-      setCreateFiles([])
-      setMsg('Producto creado correctamente.')
+      await createCategory(newCat.trim())
+      setNewCat('')
+      notifyCat('ok', 'Categoría creada correctamente')
     } catch (err) {
-      setMsg(`Error creando producto: ${err.message}`)
+      notifyCat('err', err.message || 'Error al crear la categoría')
+    } finally {
+      setCatLoading(false)
     }
   }
 
-  const updateProduct = async (e) => {
-    e.preventDefault()
-    setMsg('')
-    if (!selectedId) return
+  const handleDeleteCat = async (cat) => {
+    if (!window.confirm(`¿Eliminar la categoría "${cat.name}"?`)) return
     try {
-      const fd = buildProductFormData(editForm, editFiles, replaceImages)
-      await productsApi.updateProduct(selectedId, fd)
-      await reloadProducts()
-      setMsg('Producto actualizado correctamente.')
+      await removeCategory(cat._id)
+      notifyCat('ok', `Categoría "${cat.name}" eliminada`)
     } catch (err) {
-      setMsg(`Error actualizando producto: ${err.message}`)
-    }
-  }
-
-  const removeProduct = async (id) => {
-    const ok = window.confirm('¿Seguro que quieres eliminar este producto?')
-    if (!ok) return
-    setMsg('')
-    try {
-      await productsApi.deleteProduct(id)
-      await reloadProducts()
-      if (selectedId === id) setSelectedId('')
-      setMsg('Producto eliminado correctamente.')
-    } catch (err) {
-      setMsg(`Error eliminando producto: ${err.message}`)
+      notifyCat('err', err.message || 'Error al eliminar')
     }
   }
 
   const patchOrderStatus = async (e) => {
     e.preventDefault()
-    setMsg('')
+    setLoading(true)
     try {
       await ordersApi.updateOrderStatus(orderId, orderStatus)
-      setMsg('Estado de orden actualizado.')
+      notify('ok', `Orden actualizada a "${orderStatus}" correctamente`)
+      setOrderId('')
     } catch (err) {
-      setMsg(`Error actualizando orden: ${err.message}`)
+      notify('err', err.message || 'Error actualizando la orden')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="text-3xl font-bold">Panel admin</h1>
-      <p className="mt-2 text-sm text-ink/70">
-        Gestión completa de endpoints protegidos: <code>POST/PUT/DELETE /api/products</code> y <code>PATCH /api/orders/:id/status</code>.
-      </p>
+    <div className="mx-auto max-w-4xl px-4 py-10">
+      <h1 className="text-2xl font-bold text-ink">Panel de Administración</h1>
+      <p className="mt-1 text-sm text-ink/60">Acceso exclusivo para administradores</p>
 
-      {msg ? <p className="mt-4 rounded-xl bg-surface px-4 py-2 text-sm">{msg}</p> : null}
+      {msg ? (
+        <div
+          className={`mt-4 rounded-xl px-4 py-3 text-sm font-medium ${
+            msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+          }`}
+        >
+          {msg.text}
+        </div>
+      ) : null}
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-2">
-        <section className="rounded-2xl border border-line bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-bold">Crear producto</h2>
-          <form className="mt-4 grid gap-3" onSubmit={createProduct}>
-            <input required placeholder="Nombre" value={createForm.name} onChange={updateCreate('name')} className="rounded-xl border border-line px-3 py-2 text-sm" />
-            <textarea required minLength={5} placeholder="Descripción" value={createForm.description} onChange={updateCreate('description')} className="min-h-24 rounded-xl border border-line px-3 py-2 text-sm" />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <input required type="number" min={0} placeholder="Precio" value={createForm.price} onChange={updateCreate('price')} className="rounded-xl border border-line px-3 py-2 text-sm" />
-              <input required type="number" min={0} placeholder="Stock" value={createForm.stock} onChange={updateCreate('stock')} className="rounded-xl border border-line px-3 py-2 text-sm" />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <input required placeholder="Categoría" value={createForm.category} onChange={updateCreate('category')} className="rounded-xl border border-line px-3 py-2 text-sm" />
-              <input placeholder="Subcategoría" value={createForm.subCategory} onChange={updateCreate('subCategory')} className="rounded-xl border border-line px-3 py-2 text-sm" />
-            </div>
-            <input type="number" min={0} max={100} placeholder="Descuento %" value={createForm.discountPercent} onChange={updateCreate('discountPercent')} className="rounded-xl border border-line px-3 py-2 text-sm" />
-            <input type="file" multiple accept="image/*" onChange={(e) => setCreateFiles(e.target.files || [])} className="rounded-xl border border-line px-3 py-2 text-sm" />
-            <button className="rounded-full bg-brand py-2.5 text-sm font-bold text-white hover:bg-brand-dark">Crear producto</button>
-          </form>
-        </section>
-
-        <section className="rounded-2xl border border-line bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-bold">Actualizar producto</h2>
-          <select value={selectedId} onChange={(e) => selectProduct(e.target.value)} className="mt-4 w-full rounded-xl border border-line px-3 py-2 text-sm">
-            <option value="">Selecciona un producto</option>
-            {products.map((p) => (
-              <option key={p._id} value={p._id}>{p.name} · {formatCLP(p.price)}</option>
-            ))}
-          </select>
-
-          {selectedProduct ? (
-            <form className="mt-4 grid gap-3" onSubmit={updateProduct}>
-              <input required placeholder="Nombre" value={editForm.name} onChange={updateEdit('name')} className="rounded-xl border border-line px-3 py-2 text-sm" />
-              <textarea required minLength={5} placeholder="Descripción" value={editForm.description} onChange={updateEdit('description')} className="min-h-24 rounded-xl border border-line px-3 py-2 text-sm" />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input required type="number" min={0} placeholder="Precio" value={editForm.price} onChange={updateEdit('price')} className="rounded-xl border border-line px-3 py-2 text-sm" />
-                <input required type="number" min={0} placeholder="Stock" value={editForm.stock} onChange={updateEdit('stock')} className="rounded-xl border border-line px-3 py-2 text-sm" />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input required placeholder="Categoría" value={editForm.category} onChange={updateEdit('category')} className="rounded-xl border border-line px-3 py-2 text-sm" />
-                <input placeholder="Subcategoría" value={editForm.subCategory} onChange={updateEdit('subCategory')} className="rounded-xl border border-line px-3 py-2 text-sm" />
-              </div>
-              <input type="number" min={0} max={100} placeholder="Descuento %" value={editForm.discountPercent} onChange={updateEdit('discountPercent')} className="rounded-xl border border-line px-3 py-2 text-sm" />
-              <input type="file" multiple accept="image/*" onChange={(e) => setEditFiles(e.target.files || [])} className="rounded-xl border border-line px-3 py-2 text-sm" />
-              <label className="flex items-center gap-2 text-xs text-ink/70">
-                <input type="checkbox" checked={replaceImages} onChange={(e) => setReplaceImages(e.target.checked)} />
-                Reemplazar imágenes existentes (removeExistingImages)
-              </label>
-              <div className="flex gap-2">
-                <button className="flex-1 rounded-full bg-accent py-2.5 text-sm font-bold text-white hover:bg-orange-600">Guardar cambios</button>
-                <button type="button" onClick={() => removeProduct(selectedId)} className="rounded-full bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700">
-                  Eliminar
-                </button>
-              </div>
-            </form>
-          ) : (
-            <p className="mt-4 text-sm text-ink/60">Selecciona un producto para editarlo.</p>
-          )}
-        </section>
+      {/* Quick access */}
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <Link
+          to="/panel"
+          className="flex items-center gap-4 rounded-2xl border border-line bg-white p-5 shadow-sm no-underline transition-shadow hover:shadow-md"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand/10 text-2xl">
+            🛒
+          </div>
+          <div>
+            <div className="font-semibold text-ink">Gestión de Productos</div>
+            <div className="text-xs text-ink/60">Crear, editar y eliminar productos</div>
+          </div>
+        </Link>
+        <div className="flex items-center gap-4 rounded-2xl border border-line bg-white p-5 shadow-sm">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-2xl">
+            📦
+          </div>
+          <div>
+            <div className="font-semibold text-ink">Gestión de Órdenes</div>
+            <div className="text-xs text-ink/60">Actualizar estados de pedidos</div>
+          </div>
+        </div>
       </div>
 
-      <section className="mt-8 rounded-2xl border border-line bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">Actualizar estado de orden</h2>
-        <p className="mt-1 text-sm text-ink/70">Si tu API solo expone órdenes del usuario actual, aquí puedes cambiar estado por ID directo.</p>
-        <form className="mt-4 grid gap-3 sm:grid-cols-[1fr_180px_auto]" onSubmit={patchOrderStatus}>
-          <input required placeholder="ID de orden" value={orderId} onChange={(e) => setOrderId(e.target.value)} className="rounded-xl border border-line px-3 py-2 text-sm" />
-          <select value={orderStatus} onChange={(e) => setOrderStatus(e.target.value)} className="rounded-xl border border-line px-3 py-2 text-sm">
-            <option value="PENDIENTE">PENDIENTE</option>
-            <option value="DESPACHADO">DESPACHADO</option>
-            <option value="ENTREGADO">ENTREGADO</option>
-            <option value="CANCELADO">CANCELADO</option>
-          </select>
-          <button className="rounded-full bg-brand px-4 py-2 text-sm font-bold text-white hover:bg-brand-dark">
-            Actualizar
+      {/* Gestión de categorías */}
+      <section className="mt-8 rounded-2xl border border-line bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-ink">Categorías de productos</h2>
+        <p className="mt-1 text-sm text-ink/60">
+          Las categorías disponibles aparecen en el formulario de creación de productos.
+        </p>
+
+        {catMsg ? (
+          <div className={`mt-3 rounded-xl px-4 py-2.5 text-sm font-medium ${catMsg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            {catMsg.text}
+          </div>
+        ) : null}
+
+        <form onSubmit={handleCreateCat} className="mt-4 flex gap-2">
+          <input
+            required
+            placeholder="Nueva categoría..."
+            value={newCat}
+            onChange={(e) => setNewCat(e.target.value)}
+            className="flex-1 rounded-xl border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+          />
+          <button
+            type="submit"
+            disabled={catLoading}
+            className="rounded-full bg-brand px-4 py-2 text-sm font-bold text-white hover:bg-brand-dark disabled:opacity-60"
+          >
+            {catLoading ? 'Creando...' : '+ Agregar'}
+          </button>
+        </form>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {categories.length === 0 ? (
+            <p className="text-sm text-ink/50">Sin categorías aún.</p>
+          ) : (
+            categories.map((cat) => (
+              <span
+                key={cat._id}
+                className="flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-sm"
+              >
+                {cat.name}
+                <button
+                  type="button"
+                  onClick={() => handleDeleteCat(cat)}
+                  className="rounded-full text-ink/40 hover:text-red-600 transition-colors"
+                  title="Eliminar"
+                >
+                  ✕
+                </button>
+              </span>
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* Order status management */}
+      <section className="mt-8 rounded-2xl border border-line bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-ink">Actualizar Estado de Orden</h2>
+        <p className="mt-1 text-sm text-ink/60">
+          Ingresa el ID de la orden y selecciona el nuevo estado.
+        </p>
+
+        <form className="mt-5 grid gap-4" onSubmit={patchOrderStatus}>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-ink/70">ID de la orden *</label>
+            <input
+              required
+              placeholder="Ej: 6650abc123def456789"
+              value={orderId}
+              onChange={(e) => setOrderId(e.target.value)}
+              className="w-full rounded-xl border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-ink/70">Nuevo estado *</label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {STATUSES.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setOrderStatus(s)}
+                  className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${
+                    orderStatus === s
+                      ? `${statusColor[s]} border-transparent ring-2 ring-offset-1 ring-brand/40`
+                      : 'border-line bg-surface text-ink/70 hover:bg-line'
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-full bg-brand py-2.5 text-sm font-bold text-white hover:bg-brand-dark disabled:opacity-60"
+          >
+            {loading ? 'Actualizando…' : 'Actualizar orden'}
           </button>
         </form>
       </section>

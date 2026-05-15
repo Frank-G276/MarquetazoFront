@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import * as ordersApi from '../api/orders.js'
 import { useCart } from '../context/CartContext.jsx'
@@ -7,17 +8,33 @@ import { getProductPrimaryImage } from '../utils/productImage.js'
 export function CartPage() {
   const { cart, loading, removeItem, refreshCart } = useCart()
   const navigate = useNavigate()
+  const [checkoutError, setCheckoutError] = useState('')
+  const [removeError, setRemoveError] = useState('')
+  const [checkingOut, setCheckingOut] = useState(false)
 
   const items = cart?.items || []
   const total = items.reduce((acc, item) => acc + finalUnitPrice(item.product) * item.quantity, 0)
 
   const checkout = async () => {
+    setCheckoutError('')
+    setCheckingOut(true)
     try {
       await ordersApi.createOrder()
       await refreshCart()
       navigate('/mis-pedidos')
     } catch (err) {
-      alert(err.message || 'No se pudo generar la orden')
+      setCheckoutError(err.message || 'No se pudo generar la orden')
+    } finally {
+      setCheckingOut(false)
+    }
+  }
+
+  const handleRemove = async (productId) => {
+    setRemoveError('')
+    try {
+      await removeItem(productId)
+    } catch (err) {
+      setRemoveError(err.message || 'No se pudo quitar el producto')
     }
   }
 
@@ -41,8 +58,8 @@ export function CartPage() {
               const image = getProductPrimaryImage(p)
               return (
                 <article key={item._id || p?._id} className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 shadow-sm sm:flex-row sm:items-center">
-                  <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-surface">
-                    {image ? <img src={image} alt="" className="h-full w-full object-cover" /> : null}
+                  <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-white border border-line flex items-center justify-center p-1">
+                    {image ? <img src={image} alt="" className="h-full w-full object-contain" /> : null}
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-semibold">{p?.name}</p>
@@ -51,7 +68,7 @@ export function CartPage() {
                   </div>
                   <div className="flex items-center justify-between gap-3 sm:block sm:text-right">
                     <p className="text-sm font-bold">{formatCLP(finalUnitPrice(p) * item.quantity)}</p>
-                    <button type="button" className="mt-2 rounded-full bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700" onClick={() => removeItem(p?._id)}>
+                    <button type="button" className="mt-2 rounded-full bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700" onClick={() => handleRemove(p?._id)}>
                       Quitar
                     </button>
                   </div>
@@ -67,8 +84,14 @@ export function CartPage() {
               <strong>{formatCLP(total)}</strong>
             </div>
             <p className="mt-2 text-xs text-ink/60">El backend recalcula descuentos y stock al crear la orden.</p>
-            <button type="button" onClick={checkout} className="mt-5 w-full rounded-full bg-accent py-3 text-sm font-bold text-white hover:bg-orange-600">
-              Finalizar compra
+            {removeError ? (
+              <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">{removeError}</p>
+            ) : null}
+            {checkoutError ? (
+              <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">{checkoutError}</p>
+            ) : null}
+            <button type="button" onClick={checkout} disabled={checkingOut} className="mt-5 w-full rounded-full bg-accent py-3 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-60">
+              {checkingOut ? 'Procesando...' : 'Finalizar compra'}
             </button>
           </aside>
         </div>

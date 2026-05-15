@@ -35,8 +35,13 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(async () => {
-    await authApi.logout()
-    setUser(null)
+    try {
+      await authApi.logout()
+    } catch {
+      // si falla la API igual cerramos sesión localmente
+    } finally {
+      setUser(null)
+    }
   }, [])
 
   const value = useMemo(
@@ -44,6 +49,7 @@ export function AuthProvider({ children }) {
       user,
       loading,
       isAdmin: user?.role === 'ADMIN',
+      isManager: user?.role === 'ADMIN' || user?.role === 'EMPLEADO',
       refreshProfile,
       login,
       register,

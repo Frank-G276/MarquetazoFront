@@ -1,11 +1,14 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { ErrorBoundary } from './components/ErrorBoundary.jsx'
 import { Layout } from './components/Layout.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { CartProvider } from './context/CartContext.jsx'
+import { CategoriesProvider } from './context/CategoriesContext.jsx'
 import { ProductsProvider } from './context/ProductsContext.jsx'
 import { AboutPage } from './pages/AboutPage.jsx'
 import { AdminPage } from './pages/AdminPage.jsx'
+import { ProductsAdminPage } from './pages/ProductsAdminPage.jsx'
 import { CartPage } from './pages/CartPage.jsx'
 import { ContactPage } from './pages/ContactPage.jsx'
 import { HomePage } from './pages/HomePage.jsx'
@@ -18,16 +21,20 @@ import { ProfilePage } from './pages/ProfilePage.jsx'
 import { RegisterPage } from './pages/RegisterPage.jsx'
 import { ShippingPolicyPage } from './pages/ShippingPolicyPage.jsx'
 import { ShopPage } from './pages/ShopPage.jsx'
+import { SearchPage } from './pages/SearchPage.jsx'
 
 function App() {
   return (
+    <ErrorBoundary>
     <AuthProvider>
+      <CategoriesProvider>
       <ProductsProvider>
         <CartProvider>
           <Routes>
             <Route element={<Layout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/tienda" element={<ShopPage />} />
+              <Route path="/buscar" element={<SearchPage />} />
               <Route path="/producto/:id" element={<ProductDetailPage />} />
               <Route path="/nosotros" element={<AboutPage />} />
               <Route path="/contacto" element={<ContactPage />} />
@@ -66,6 +73,14 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/panel"
+                element={
+                  <ProtectedRoute managerOnly>
+                    <ProductsAdminPage />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
 
             <Route path="/login" element={<LoginPage />} />
@@ -75,7 +90,9 @@ function App() {
           </Routes>
         </CartProvider>
       </ProductsProvider>
+      </CategoriesProvider>
     </AuthProvider>
+    </ErrorBoundary>
   )
 }
 

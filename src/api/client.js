@@ -18,11 +18,16 @@ export async function apiFetch(path, options = {}) {
     headers.set('Content-Type', 'application/json')
   }
 
-  const response = await fetch(url, {
-    credentials: 'include',
-    ...options,
-    headers,
-  })
+  let response
+  try {
+    response = await fetch(url, {
+      credentials: 'include',
+      ...options,
+      headers,
+    })
+  } catch {
+    throw new Error('Sin conexión con el servidor. Verifica tu internet e intenta de nuevo.')
+  }
 
   const text = await response.text()
   let payload = null
