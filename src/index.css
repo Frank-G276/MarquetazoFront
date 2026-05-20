@@ -3,12 +3,45 @@
 
 @theme {
   --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
-  --color-brand: #2e7d32;
-  --color-brand-dark: #1b5e20;
+  --color-brand: #3b82f6;
+  --color-brand-dark: #2563eb;
   --color-accent: #f57c00;
-  --color-ink: #333d29;
-  --color-surface: #f8f9f8;
-  --color-line: #e0e0e0;
+  --color-ink: #0f172a;
+  --color-surface: #f8fafc;
+  --color-line: #e2e8f0;
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-float-slow: float-slow 8s ease-in-out infinite;
+  --animate-fade-in-up: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-pulse-slow: pulseSlow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-fade-in: fadeIn 0.5s ease-out forwards;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(1deg); }
+  }
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-18px) rotate(-1deg); }
+  }
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes pulseSlow {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
 }
 
 @layer base {

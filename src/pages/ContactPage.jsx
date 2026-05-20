@@ -25,9 +25,10 @@ function ContactInfoCard({ icon, title, lines, accent = false }) {
       ref={ref}
       className={`group flex flex-col gap-4 rounded-2xl border p-6 transition-all duration-700 hover:-translate-y-1 hover:shadow-lg
         ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+        bg-white
         ${accent
-          ? 'border-brand/30 bg-gradient-to-br from-brand/5 to-brand/10 hover:border-brand/50'
-          : 'border-line bg-white hover:border-brand/30'
+          ? 'border-brand hover:border-brand/50 shadow-sm shadow-brand/20 ring-1 ring-brand/10'
+          : 'border-line hover:border-brand/30'
         }`}
     >
       <div className={`flex h-12 w-12 items-center justify-center rounded-xl text-2xl transition-colors duration-300
@@ -134,7 +135,7 @@ export function ContactPage() {
     <div className="min-h-screen bg-surface">
 
       {/* ── HERO ── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand via-brand-dark to-[#0a3d12] py-20 text-white">
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 py-20 text-white">
         <div className="pointer-events-none absolute inset-0 opacity-10"
           style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
         <div className="pointer-events-none absolute -top-20 right-10 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
@@ -312,12 +313,12 @@ export function ContactPage() {
         >
           <div className="overflow-hidden rounded-3xl border border-line shadow-sm">
             {/* Mapa estático visual */}
-            <div className="relative h-64 bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
+            <div className="relative h-64 bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center">
               <div className="pointer-events-none absolute inset-0"
                 style={{
                   backgroundImage: `
-                    linear-gradient(rgba(46,125,50,0.08) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(46,125,50,0.08) 1px, transparent 1px)
+                    linear-gradient(rgba(59,130,246,0.08) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(59,130,246,0.08) 1px, transparent 1px)
                   `,
                   backgroundSize: '40px 40px'
                 }}
