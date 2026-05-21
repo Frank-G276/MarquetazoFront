@@ -272,20 +272,56 @@ export function AboutPage() {
       </section>
 
       {/* ── CTA FINAL ── */}
-      <section className="bg-gradient-to-r from-brand to-brand-dark py-20 text-center text-white">
-        <div className="mx-auto max-w-2xl px-6">
-          <span className="text-4xl">🛒</span>
-          <h2 className="mt-4 text-3xl font-extrabold">¿Listo para comenzar?</h2>
-          <p className="mt-3 text-lg text-white/80">
-            Descubre miles de productos frescos con entrega rápida y precios que te van a sorprender.
+      <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-white to-amber-50 py-20 text-center">
+
+        {/* Blobs decorativos */}
+        <div className="pointer-events-none absolute top-0 left-0 h-72 w-72 rounded-full bg-orange-200/30 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-72 w-72 rounded-full bg-amber-200/30 blur-3xl" />
+
+        {/* Patrón suave */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 20% 20%, rgba(251,146,60,0.12) 1px, transparent 1px), radial-gradient(circle at 80% 80%, rgba(245,158,11,0.12) 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+          }}
+        />
+
+        <div className="relative mx-auto max-w-2xl px-6">
+
+          {/* Icono */}
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-4xl shadow-lg shadow-orange-200">
+            🛒
+          </div>
+
+          {/* Título */}
+          <h2 className="mt-6 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">
+            ¿Listo para comenzar?
+          </h2>
+
+          {/* Descripción */}
+          <p className="mx-auto mt-4 max-w-xl text-lg leading-relaxed text-ink/60">
+            Descubre miles de productos frescos con entrega rápida y precios que realmente te van a sorprender.
           </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <a href="/tienda" className="inline-flex items-center gap-2 rounded-full bg-accent px-8 py-3.5 text-sm font-bold text-white no-underline hover:bg-orange-600 transition-colors duration-200 shadow-lg shadow-accent/30">
-              Ir a la tienda →
+
+          {/* Botones */}
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
+
+            <a
+              href="/tienda"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 px-8 py-3.5 text-sm font-bold text-white no-underline shadow-lg shadow-orange-300/40 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+            >
+              Ir a la tiendas →
             </a>
-            <a href="/contacto" className="inline-flex items-center gap-2 rounded-full bg-white/15 px-8 py-3.5 text-sm font-semibold text-white no-underline hover:bg-white/25 ring-1 ring-white/25 transition-colors duration-200">
+
+            <a
+              href="/contacto"
+              className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-8 py-3.5 text-sm font-semibold text-ink no-underline shadow-sm transition-all duration-300 hover:bg-slate-50 hover:shadow-md"
+            >
               Contáctanos
             </a>
+
           </div>
         </div>
       </section>
