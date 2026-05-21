@@ -240,8 +240,6 @@ export function Navbar() {
         {/* Nav links desktop */}
         <nav className="ml-auto hidden items-center gap-1.5 lg:flex">
           <NavLink to="/tienda" className={navClass}>Tienda</NavLink>
-          <NavLink to="/nosotros" className={navClass}>Nosotros</NavLink>
-          <NavLink to="/contacto" className={navClass}>Contacto</NavLink>
           {user ? (
             <>
               <NavLink to="/carrito" className={navClass}>
@@ -313,8 +311,6 @@ export function Navbar() {
 
           <div className="mt-3 flex flex-col gap-1">
             <NavLink to="/tienda" className={navClass} onClick={closeMenus}>Tienda</NavLink>
-            <NavLink to="/nosotros" className={navClass} onClick={closeMenus}>Nosotros</NavLink>
-            <NavLink to="/contacto" className={navClass} onClick={closeMenus}>Contacto</NavLink>
 
             {/* Categorías mobile */}
             <div className="mt-1 border-t border-slate-800 pt-2">
