@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { ProductCard } from '../components/ProductCard.jsx'
 import { useProducts } from '../context/ProductsContext.jsx'
 import { formatCLP } from '../utils/money.js'
+import { Pagination } from '../components/Pagination.jsx'
 
 const CATEGORY_STYLES = {
   Lacteos: { icon: '🥛', label: 'Lácteos' },
@@ -64,18 +65,25 @@ export function ShopPage() {
   const [params, setParams] = useSearchParams()
   const cat = params.get('cat') || ''
   const q = params.get('q') || ''
-  
+
   const { products, loading, error, categories, reloadProducts } = useProducts()
-  
+
   const [searchQuery, setSearchQuery] = useState(q)
   const [viewMode, setViewMode] = useState('grid')
   const [onlyOffers, setOnlyOffers] = useState(false)
   const [sortBy, setSortBy] = useState('relevance')
   const [maxPriceFilter, setMaxPriceFilter] = useState(Infinity)
 
+  const ITEMS_PER_PAGE = 9
+  const [currentPage, setCurrentPage] = useState(1)
+
   useEffect(() => {
     setSearchQuery(q)
   }, [q])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [cat, q, onlyOffers, maxPriceFilter, sortBy])
 
   const maxProductPrice = useMemo(() => {
     if (products.length === 0) return 10000
@@ -106,22 +114,22 @@ export function ShopPage() {
 
   const filtered = useMemo(() => {
     let list = products
-    
+
     if (cat) {
       list = list.filter((p) => normalize(p.category) === normalize(cat))
     }
-    
+
     if (q) {
       const nq = normalize(q)
       list = list.filter((p) =>
         normalize(`${p.name} ${p.description || ''} ${p.subCategory || ''}`).includes(nq)
       )
     }
-    
+
     if (onlyOffers) {
       list = list.filter((p) => Number(p.discountPercent || 0) > 0)
     }
-    
+
     if (maxPriceFilter && maxPriceFilter !== Infinity) {
       list = list.filter((p) => {
         const discount = Number(p.discountPercent || 0)
@@ -129,7 +137,7 @@ export function ShopPage() {
         return finalPrice <= maxPriceFilter
       })
     }
-    
+
     const sorted = [...list]
     if (sortBy === 'price-asc') {
       sorted.sort((a, b) => {
@@ -152,9 +160,21 @@ export function ShopPage() {
     } else if (sortBy === 'name-asc') {
       sorted.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'es'))
     }
-    
+
     return sorted
   }, [products, cat, q, onlyOffers, maxPriceFilter, sortBy])
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
+
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filtered.slice(start, start + ITEMS_PER_PAGE)
+  }, [filtered, currentPage])
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const clearFilters = () => {
     setSearchQuery('')
@@ -166,7 +186,7 @@ export function ShopPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:py-12 animate-fade-in">
-      
+
       {/* Banner Superior Dinámico */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white rounded-3xl mb-8 p-6 md:p-10 border border-slate-900 shadow-xl">
         <div className="absolute -left-20 -top-20 h-52 w-52 rounded-full bg-brand/10 blur-3xl pointer-events-none animate-float-slow" />
@@ -230,12 +250,12 @@ export function ShopPage() {
       </div>
 
       <div className="flex flex-col gap-8 lg:flex-row">
-        
+
         {/* Barra Lateral de Filtros (Sidebar) */}
         <aside className="lg:w-64 lg:shrink-0 flex flex-col gap-6">
-          
+
           <div className="bg-white rounded-2xl border border-line p-5 shadow-sm space-y-6">
-            
+
             {/* Categorías */}
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-ink/40">Categorías</span>
@@ -243,11 +263,10 @@ export function ShopPage() {
                 <li>
                   <Link
                     to="/tienda"
-                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition-all no-underline ${
-                      !cat
+                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition-all no-underline ${!cat
                         ? 'bg-brand/10 text-brand'
                         : 'text-ink/75 hover:bg-slate-50 hover:text-ink'
-                    }`}
+                      }`}
                   >
                     <span className="flex items-center gap-2">
                       <span>📦</span>
@@ -262,16 +281,15 @@ export function ShopPage() {
                   const style = CATEGORY_STYLES[c] || { icon: '📦', label: c }
                   const count = categoryCounts[c] || 0
                   const isActive = normalize(c) === normalize(cat)
-                  
+
                   return (
                     <li key={c}>
                       <Link
                         to={`/tienda?cat=${encodeURIComponent(c)}`}
-                        className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition-all no-underline ${
-                          isActive
+                        className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition-all no-underline ${isActive
                             ? 'bg-brand/10 text-brand'
                             : 'text-ink/75 hover:bg-slate-50 hover:text-ink'
-                        }`}
+                          }`}
                       >
                         <span className="flex items-center gap-2 capitalize">
                           <span>{style.icon}</span>
@@ -335,22 +353,20 @@ export function ShopPage() {
                     <button
                       key={val}
                       onClick={() => setMaxPriceFilter(val)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
-                        maxPriceFilter === val
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${maxPriceFilter === val
                           ? 'bg-brand border-brand text-white shadow-sm'
                           : 'bg-surface border-line text-ink/75 hover:bg-slate-50'
-                      }`}
+                        }`}
                     >
                       &lt; {formatCLP(val)}
                     </button>
                   ))}
                   <button
                     onClick={() => setMaxPriceFilter(Infinity)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
-                      maxPriceFilter === Infinity
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${maxPriceFilter === Infinity
                         ? 'bg-brand border-brand text-white shadow-sm'
                         : 'bg-surface border-line text-ink/75 hover:bg-slate-50'
-                    }`}
+                      }`}
                   >
                     Todos
                   </button>
@@ -363,7 +379,7 @@ export function ShopPage() {
 
         {/* Sección de Productos */}
         <div className="flex-1">
-          
+
           {/* Faja de Ordenación e Información */}
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white border border-line rounded-2xl p-4 shadow-sm">
             <div className="text-sm font-medium text-ink/70">
@@ -376,7 +392,7 @@ export function ShopPage() {
                 </span>
               )}
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-3 justify-between sm:justify-end">
               <div className="flex items-center gap-2">
                 <label htmlFor="sortBy" className="text-xs font-semibold uppercase text-ink/40 tracking-wider">Ordenar por</label>
@@ -393,7 +409,7 @@ export function ShopPage() {
                   <option value="name-asc">Nombre (A-Z)</option>
                 </select>
               </div>
-              
+
               <div className="flex items-center border border-line rounded-xl bg-surface p-1">
                 <button
                   onClick={() => setViewMode('grid')}
@@ -453,11 +469,18 @@ export function ShopPage() {
                   </button>
                 </div>
               ) : (
-                <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
-                  {filtered.map((p) => (
-                    <ProductCard key={p._id} product={p} viewMode={viewMode} />
-                  ))}
-                </div>
+                <>
+                  <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                    {paginatedProducts.map((p) => (
+                      <ProductCard key={p._id} product={p} viewMode={viewMode} />
+                    ))}
+                  </div>
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </>
               )}
             </>
           )}
