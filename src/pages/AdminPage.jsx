@@ -149,6 +149,19 @@ export function AdminPage() {
           </div>
         </Link>
 
+        <Link
+          to="/admin/dashboard"
+          className="flex items-center gap-4 rounded-2xl border border-line bg-white p-5 shadow-sm no-underline transition-all duration-300 hover:shadow-md hover:border-brand/40 group hover:-translate-y-0.5 active:translate-y-0"
+        >
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-2xl shadow-inner">
+            📊
+          </div>
+          <div>
+            <div className="font-extrabold text-sm text-ink group-hover:text-brand transition-colors">Dashboard</div>
+            <div className="text-xs text-ink/60 mt-0.5 leading-snug">Panel con métricas y gráficos del sistema</div>
+          </div>
+        </Link>
+
         <a
           href="#update-orders"
           onClick={(e) => {

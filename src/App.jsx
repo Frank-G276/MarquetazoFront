@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext.jsx'
 import { CartProvider } from './context/CartContext.jsx'
 import { CategoriesProvider } from './context/CategoriesContext.jsx'
 import { ProductsProvider } from './context/ProductsContext.jsx'
+import DashboardAdmin from './pages/DashboardAdmin.jsx'
 import { AboutPage } from './pages/AboutPage.jsx'
 import { AdminPage } from './pages/AdminPage.jsx'
 import { ProductsAdminPage } from './pages/ProductsAdminPage.jsx'
@@ -70,6 +71,14 @@ function App() {
                 element={
                   <ProtectedRoute adminOnly>
                     <AdminPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <DashboardAdmin />
                   </ProtectedRoute>
                 }
               />
